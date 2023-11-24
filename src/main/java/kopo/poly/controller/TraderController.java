@@ -1,8 +1,6 @@
 package kopo.poly.controller;
 
 import kopo.poly.dto.*;
-import kopo.poly.service.IReviewService;
-import kopo.poly.service.IShopService;
 import kopo.poly.service.ITraderService;
 import kopo.poly.util.CmmUtil;
 import kopo.poly.util.EncryptUtil;
@@ -17,8 +15,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -28,8 +24,11 @@ import java.util.Optional;
 public class TraderController {
 
     private final ITraderService traderService;
-    private final IShopService shopService;
 
+    /*
+        로그인 페이지 코드
+        구현완료(10/24)
+     */
     @GetMapping(value = "/login")
     public String login() {
 
@@ -38,6 +37,10 @@ public class TraderController {
         return "/trader/login";
     }
 
+    /*
+        로그인 처리 로직코드
+        구현완료(11/10)
+     */
     @ResponseBody
     @PostMapping(value = "loginProc")
     public MsgDTO loginProc(HttpServletRequest request, HttpSession session) {
@@ -105,12 +108,19 @@ public class TraderController {
 
         return dto;
     }
+
+    /*
+        회원가입 페이지 이동 코드
+        구현완료(11/08)
+     */
     @GetMapping(value = "/traderSignUp")
     public String traderSignUp() {
         log.info(this.getClass().getName() + "traderSignUp");
         return "/trader/traderSignUp";
     }
 
+    // 회원가입 시 ID 중복 확인 코드
+    // 구현완료(11/10)
     @ResponseBody
     @PostMapping(value = "getTraderIdExists")
     public TraderDTO getTraderIdExists(HttpServletRequest request) throws Exception {
@@ -128,6 +138,9 @@ public class TraderController {
         log.info(this.getClass().getName() + ".getTraderIdExists End!");
         return rDTO;
     }
+
+    // 사업자등록번호 중복확인 코드
+    // 구현완료(11/13)
     @ResponseBody
     @PostMapping(value = "getBusinessNumberExists")
     public TraderDTO getBusinessNumberExists(HttpServletRequest request) throws Exception {
@@ -146,6 +159,8 @@ public class TraderController {
         return rDTO;
     }
 
+    // 상인정보 등록 로직코드
+    // 구현완료(11/13)
     @ResponseBody
     @PostMapping(value = "insertTrader")
     public MsgDTO insertTrader(HttpServletRequest request) throws Exception {
@@ -217,6 +232,8 @@ public class TraderController {
         return dto;
     }
 
+    // 상인 메인페이지 이동코드
+    // 구현 중
     @GetMapping(value = "/traderIndex")
     public String traderIndex(HttpSession session, ModelMap model) throws Exception{
         log.info(this.getClass().getName() + ".traderIndex Start!");
@@ -246,7 +263,8 @@ public class TraderController {
         return "/trader/traderIndex";
     }
 
-
+    // 상인 정보 페이지 이동 코드
+    // 구현완료(11/10)
     @GetMapping(value = "/traderInfo")
     public String traderInfo(HttpSession session, ModelMap model) throws Exception{
         log.info(this.getClass().getName() + ".traderInfo start!");
@@ -267,15 +285,8 @@ public class TraderController {
         return "/trader/traderInfo";
     }
 
-
-    @GetMapping(value = "/reservMng")
-    public String reservMng() {
-        log.info("start");
-
-        return "/trader/reservMng";
-    }
-
-
+    // 상인정보 수정페이지 이동코드
+    // 구현완료(11/13)
     @GetMapping(value = "/updateTraderInfo")
     public String updateTraderInfo(HttpSession session, ModelMap model) throws Exception{
         log.info(this.getClass().getName() + ".updateTraderInfo start!");
@@ -296,6 +307,8 @@ public class TraderController {
         return "/trader/updateTraderInfo";
     }
 
+    // 상인 비밀번호 수정페이지 이동 코드
+    // 구현완료(11/10)
     @GetMapping(value = "/updateTraderPw")
     public String updateTraderPw(HttpSession session, ModelMap model) throws Exception{
         log.info(this.getClass().getName() + ".updateTraderPw start!");
@@ -315,6 +328,9 @@ public class TraderController {
         log.info(this.getClass().getName() + ".updateTraderPw End!");
         return "/trader/updateTraderPw";
     }
+
+    // 상인정보 수정로직 코드
+    // 구현완료(11/13)
     @ResponseBody
     @PostMapping(value = "updateInfo")
     public MsgDTO updateInfo(HttpServletRequest request, HttpSession session) throws Exception {
@@ -377,6 +393,9 @@ public class TraderController {
         }
         return dto;
     }
+
+    // 상인 비밀번호 수정로직 코드
+    // 구현완료(11/10)
     @ResponseBody
     @PostMapping(value = "updatePw")
     public MsgDTO updatePw(HttpServletRequest request, HttpSession session) throws Exception {
@@ -392,14 +411,21 @@ public class TraderController {
         try {
             String traderId = CmmUtil.nvl((String) session.getAttribute("SS_ID"));
             String traderPw = CmmUtil.nvl(request.getParameter("traderPw"));
+            String newTraderPw = CmmUtil.nvl(request.getParameter("npw"));
 
             log.info("traderId : " + traderId);
             log.info("traderPw : " + traderPw);
+            log.info("newTraderPw : " + newTraderPw);
+
+            if (traderPw.equals(newTraderPw)) {
+                msg = "같은 비밀번호를 입력하셨습니다.";
+                throw new Exception();
+            }
 
             pDTO = new TraderDTO();
 
             pDTO.setTraderId(traderId);
-            pDTO.setTraderPw(EncryptUtil.encHashSHA256(traderPw));
+            pDTO.setTraderPw(EncryptUtil.encHashSHA256(newTraderPw));
             log.info(pDTO.toString());
 
             res = traderService.updateTraderPw(pDTO);
@@ -412,7 +438,7 @@ public class TraderController {
                 msg = "오류로 인해 수정에 실패하였습니다";
             }
         }catch (Exception e) {
-            msg = "실패하였습니다 : " + e;
+            msg = "같은 비밀번호를 입력하셨습니다.";
             log.info(e.toString());
             e.printStackTrace();
         }finally {
@@ -424,6 +450,8 @@ public class TraderController {
         return dto;
     }
 
+    // 고객센터 페이지 이동코드
+    // 구현완료(10/30)
     @GetMapping(value = "/customerService")
     public String customerService() {
         log.info("start!");

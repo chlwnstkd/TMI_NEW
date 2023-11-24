@@ -11,8 +11,8 @@ import java.util.List;
 @ToString
 public class ReviewDTO {
     private String reviewNumber;
+    private String goodsName;
     private String goodsNumber;
-    private String customerNumber;
     private String regDt;
     private String contents;
     private String score;

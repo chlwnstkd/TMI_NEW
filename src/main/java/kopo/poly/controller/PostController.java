@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 
 
-
 @Slf4j
 @RequestMapping(value = "/post")
 //특정 메소드와 매핑하기 위해 사용, 구형이다
@@ -29,15 +28,23 @@ import java.util.Optional;
 public class PostController {
     private final IPostService postService;
     private final IFileService fileService;
-//GET 방식은 데이터 조회, POST 방식에서 새로운 데이터 추가.
+
+    //GET 방식은 데이터 조회, POST 방식에서 새로운 데이터 추가.
+
+    // 게시글 목록 조회 및 페이지 이동 코드
+    // 구현완료(11/13)
     @GetMapping(value = "/postList")
-    public String postList(ModelMap model, @RequestParam(defaultValue = "1") int page)
+    public String postList(ModelMap model, @RequestParam(defaultValue = "1") int page, HttpServletRequest request)
             throws Exception {
         log.info(this.getClass().getName() + ".postList Start!");
 
-        List<PostDTO> rList = postService.getPostList();
+
+        String type = CmmUtil.nvl(request.getParameter("type"));
+
+        List<PostDTO> rList = postService.getPostList(type);
         if (rList == null) rList = new ArrayList<>();
 
+        log.info(rList.toString());
         // 페이지당 보여줄 아이템 개수 정의
         int itemsPerPage = 3;
 
@@ -57,9 +64,19 @@ public class PostController {
         model.addAttribute("totalPages", totalPages);
 
         log.info(this.getClass().getName() + ".페이지 번호 : " + page);
+
         log.info(this.getClass().getName() + ".postList End!");
+        if(type.equals("notice")) {
+            return "/post/noticeList";
+        }
+        if(type.equals("verification")) {
+            return "/post/verificationPostList";
+        }
         return "/post/postList";
     }
+
+    // 게시글 등록페이지 이동코드
+    // 구현완료(11/10)
     @GetMapping(value = "/postReg")
     public String PostReg() {
         log.info(this.getClass().getName() + ".postReg Start!");
@@ -68,6 +85,8 @@ public class PostController {
         return "/post/postReg";
     }
 
+    // 게시글 등록 로직코드
+    // 구현완료(11/10)
     @ResponseBody
     @PostMapping(value = "/postInsert")
     public MsgDTO postInsert(HttpServletRequest request, HttpSession session, @RequestParam(value = "fileUpload") MultipartFile mf) {
@@ -89,18 +108,17 @@ public class PostController {
             pDTO.setCustomerId(customer_id);
             pDTO.setTitle(title);
             pDTO.setContents(contents);
-            if(!mf.isEmpty()) {
+            if (!mf.isEmpty()) {
                 String image = mf.getOriginalFilename();
                 String fileName = image;
                 String folderName = type + "/" + LocalDate.now() + "/";
-                fileService.upload(fileName,folderName, mf);
+                fileService.upload(fileName, folderName, mf);
                 pDTO.setImage(fileService.getFileURL(folderName, fileName));
                 log.info(pDTO.getImage());
             }
             postService.insertPostInfo(pDTO);
             msg = "등록되었습니다.";
             res = 1;
-
 
 
         } catch (Exception e) {
@@ -118,6 +136,8 @@ public class PostController {
         return dto;
     }
 
+    // 게시글 상세보기 코드
+    // 구현완료(11/13)
     @GetMapping(value = "/postInfo")
     public String postInfo(HttpServletRequest request, ModelMap model) throws Exception {
         log.info(this.getClass().getName() + ".postInfo Start!");
@@ -138,6 +158,8 @@ public class PostController {
         return "/post/postInfo";
     }
 
+    // 게시글 수정페이지 이동코드
+    // 구현완료(11/13)
     @GetMapping(value = "/postEditInfo")
     public String postEditInfo(HttpServletRequest request, ModelMap model) throws Exception {
         log.info(this.getClass().getName() + ".postEditInfo Start!");
@@ -159,6 +181,8 @@ public class PostController {
         return "/post/postEditInfo";
     }
 
+    // 게시글 수정로직 코드
+    // 구현완료(11/13)
     @ResponseBody
     @PostMapping(value = "/postUpdate")
     public MsgDTO postUpdate(HttpSession session, HttpServletRequest request, @RequestParam(value = "fileUpload") MultipartFile mf) {
@@ -186,7 +210,7 @@ public class PostController {
             pDTO.setTitle(title);
             pDTO.setContents(contents);
             pDTO.setImage("");
-            if(!mf.isEmpty()) {
+            if (!mf.isEmpty()) {
                 String image = mf.getOriginalFilename();
                 String fileName = image;
                 String folderName = "Post" + "/" + pDTO.getPostNumber() + "/";
@@ -213,6 +237,8 @@ public class PostController {
         return dto;
     }
 
+    // 게시글 삭제로직 코드
+    // 구현완료(11/13)
     @ResponseBody
     @PostMapping(value = "/postDelete")
     public MsgDTO postDelete(HttpSession session, ModelMap model, HttpServletRequest request) {
