@@ -262,23 +262,32 @@ public class CustomerController {
         pDTO.setShopNumber(shopNumber);
 
         List<GoodsDTO> rList = Optional.ofNullable(goodsService.getGoodsList(pDTO)).orElseGet(ArrayList::new);
+        List<ShopDTO> sList = Optional.ofNullable(reservationService.getPopularShop()).orElseGet(ArrayList::new);
 
         log.info(rList.toString());
         String shopName;
         String shopDescription;
-
+        String market;
+        String goodsCount;
         if (!rList.isEmpty()) {
             GoodsDTO firstGoods = rList.get(0);
             shopName = firstGoods.getShopName();
             shopDescription = firstGoods.getShopDescription();
+            market = firstGoods.getMarketNumber();
+            goodsCount = firstGoods.getGoodsCount();
         } else {
             shopName = "아직 이 상점에는 상품이 없어요";
             shopDescription = "";
+            market = "";
+            goodsCount = "0";
         }
 
+        model.addAttribute("goodsCount", goodsCount);
         model.addAttribute("rList", rList);
+        model.addAttribute("sList", sList);
         model.addAttribute("shopName", shopName);
         model.addAttribute("shopDescription", shopDescription);
+        model.addAttribute("market", market);
         log.info(this.getClass().getName() + ".shop End!");
 
         return "/customer/shop";
@@ -310,13 +319,17 @@ public class CustomerController {
         List<ShopDTO> rList = Optional.ofNullable(shopService.getShopList(pDTO)).orElseGet(ArrayList::new);
 
         String marketName;
+        String shopCount;
         if (!rList.isEmpty()) {
             ShopDTO firstShop = rList.get(0);
             marketName = firstShop.getMarketName();
+            shopCount = firstShop.getShopCount();
         } else {
             marketName = "아직 이 시장에는 상점이 없어요";
+            shopCount = "0";
         }
 
+        model.addAttribute("shopCount", shopCount);
         model.addAttribute("marketName", marketName);
         model.addAttribute("rList", rList);
 
@@ -508,11 +521,14 @@ public class CustomerController {
         log.info(this.getClass().getName() + ".goodsMngInfo Start!");
 
         String goodsNumber = request.getParameter("goodsNumber");
+        String market = request.getParameter("market");
         log.info("goodsNumber : " + goodsNumber);
+        log.info("market : " + market);
 
         GoodsDTO pDTO = new GoodsDTO();
         pDTO.setGoodsNumber(goodsNumber);
         GoodsDTO gDTO = Optional.ofNullable(goodsService.getGoodsInfo(pDTO)).orElseGet(GoodsDTO::new);
+        List<GoodsDTO> gList = Optional.ofNullable(reservationService.getPopularGoods(market)).orElseGet(ArrayList::new);
 
         ReviewDTO pDTO2 = new ReviewDTO();
         pDTO2.setGoodsNumber(goodsNumber);
@@ -522,10 +538,12 @@ public class CustomerController {
         log.info("gDTO : " + gDTO.toString());
         log.info("rDTO : " + rDTO.toString());
         log.info("cDTO : " + cDTO.toString());
+        log.info("gList : " + gList.toString());
 
         model.addAttribute("cDTO", cDTO);
         model.addAttribute("rDTO", rDTO);
         model.addAttribute("gDTO", gDTO);
+        model.addAttribute("gList", gList);
 
         log.info(this.getClass().getName() + ".goodsMngInfo End!");
         return "/customer/single-product";
